@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { User as SupabaseAuthUser } from '@supabase/supabase-js';
 import { Hero } from './components/Hero';
 import { Features } from './components/Features';
@@ -199,6 +199,7 @@ const App: React.FC = () => {
   const [bookings, setBookings] = useState<BookingRecord[]>([]);
   const [games, setGames] = useState<Game[]>([]);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const userRef = useRef<User | null>(null);
 
   const addEvent = useCallback(async (event: Omit<ProfileEvent, 'id' | 'timestamp'>) => {
     if (!authUser) {
@@ -383,17 +384,21 @@ const App: React.FC = () => {
       return acc;
     }, {});
 
+    const ownNicknameFallback = userRef.current?.nickname || currentAuthUser?.user_metadata?.nickname as string || currentAuthUser?.email?.split('@')[0] || 'User';
+    const ownAvatarFallback = userRef.current?.avatar || DEFAULT_AVATAR;
+
     const resolvedSessions: SessionActivity[] = resolvedSessionRows.map(session => {
       const sessionSlots = slotsBySession[session.id] || [];
       const game = gamesById[session.game_id];
       const champion = session.champion_id ? championsById[session.champion_id] : null;
       const trainer = trainersById[session.trainer_id];
+      const isCurrentUserTrainer = !!currentAuthUser && session.trainer_id === currentAuthUser.id;
 
       return {
         id: session.id,
         trainerId: session.trainer_id,
-        trainerName: trainer?.nickname || 'Trainer',
-        avatar: trainer?.avatar_url || DEFAULT_AVATAR,
+        trainerName: trainer?.nickname || (isCurrentUserTrainer ? ownNicknameFallback : 'Trainer'),
+        avatar: trainer?.avatar_url || (isCurrentUserTrainer ? ownAvatarFallback : DEFAULT_AVATAR),
         gameId: session.game_id,
         game: game?.name || 'Unknown game',
         championId: session.champion_id || undefined,
@@ -485,26 +490,16 @@ const App: React.FC = () => {
     }));
 
     const resolvedProfile = profileRow as DbUser | null;
-    const resolvedUser: User = {
+    setUser(prev => ({
       id: currentAuthUser.id,
-      email: resolvedProfile?.email || currentAuthUser.email || '',
-      nickname: resolvedProfile?.nickname || authNickname,
-      avatar: resolvedProfile?.avatar_url || DEFAULT_AVATAR,
-      bio: resolvedProfile?.bio || '',
-      balance: Number(resolvedProfile?.balance ?? 0),
-      accounts: resolvedAccounts,
-      events: resolvedEvents
-    };
-
-    setUser(prev => {
-      if (!prev) {
-        return resolvedUser;
-      }
-      return {
-        ...resolvedUser,
-        events: prev.events.length > 0 ? prev.events : resolvedUser.events
-      };
-    });
+      email: resolvedProfile?.email || currentAuthUser.email || prev?.email || '',
+      nickname: resolvedProfile?.nickname || prev?.nickname || authNickname,
+      avatar: resolvedProfile?.avatar_url || prev?.avatar || DEFAULT_AVATAR,
+      bio: resolvedProfile?.bio ?? prev?.bio ?? '',
+      balance: Number(resolvedProfile?.balance ?? prev?.balance ?? 0),
+      accounts: resolvedAccounts.length > 0 ? resolvedAccounts : (prev?.accounts ?? []),
+      events: resolvedEvents.length > 0 ? resolvedEvents : (prev?.events ?? [])
+    }));
 
     const { data: appRows, error: appError } = await supabase
       .from('trainer_applications')
@@ -610,6 +605,10 @@ const App: React.FC = () => {
   useEffect(() => {
     document.body.className = theme === 'light' ? 'light-theme' : '';
   }, [theme]);
+
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
 
   useEffect(() => {
     let mounted = true;
