@@ -862,12 +862,32 @@ const App: React.FC = () => {
     });
   };
 
-  const handleAddGame = async (game: Omit<Game, 'id' | 'champions'>) => {
+  const handleAddGame = async (game: { name: string; description: string; avatarFile: File }) => {
+    const fileExt = game.avatarFile.name.split('.').pop() || 'jpg';
+    const safeName = game.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const filePath = `${Date.now()}-${safeName || 'game'}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('game-avatars')
+      .upload(filePath, game.avatarFile, {
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (uploadError) {
+      console.error('Failed to upload game avatar:', uploadError.message);
+      return;
+    }
+
+    const { data: publicData } = supabase.storage
+      .from('game-avatars')
+      .getPublicUrl(filePath);
+
     const { error } = await supabase
       .from('games')
       .insert({
         name: game.name,
-        avatar_url: game.avatar || null,
+        avatar_url: publicData.publicUrl,
         description: game.description || null,
         is_active: true
       });

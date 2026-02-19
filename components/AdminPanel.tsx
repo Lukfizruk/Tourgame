@@ -17,7 +17,7 @@ interface AdminPanelProps {
   games: Game[];
   activeSessions: SessionActivity[];
   bookings: BookingRecord[];
-  onAddGame: (game: Omit<Game, 'id' | 'champions'>) => void;
+  onAddGame: (game: { name: string; description: string; avatarFile: File }) => Promise<void> | void;
   onAddChampion: (gameId: string, champion: Omit<Champion, 'id'>) => void;
   onBack: () => void;
 }
@@ -39,7 +39,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   
   const [isAddingGame, setIsAddingGame] = useState(false);
   const [newGameName, setNewGameName] = useState('');
-  const [newGameAvatar, setNewGameAvatar] = useState('');
+  const [newGameAvatarFile, setNewGameAvatarFile] = useState<File | null>(null);
   const [newGameDesc, setNewGameDesc] = useState('');
 
   const [isAddingChampion, setIsAddingChampion] = useState(false);
@@ -48,12 +48,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
   const selectedGame = games.find(g => g.id === selectedGameId);
 
-  const handleAddGameSubmit = (e: React.FormEvent) => {
+  const handleAddGameSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onAddGame({ name: newGameName, avatar: newGameAvatar, description: newGameDesc });
+    if (!newGameAvatarFile) {
+      return;
+    }
+    await onAddGame({ name: newGameName, description: newGameDesc, avatarFile: newGameAvatarFile });
     setIsAddingGame(false);
     setNewGameName('');
-    setNewGameAvatar('');
+    setNewGameAvatarFile(null);
     setNewGameDesc('');
   };
 
@@ -316,7 +319,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             <h3 className="font-orbitron text-2xl font-black dark:text-white light:text-slate-900 mb-8 uppercase tracking-tighter">Новая игра</h3>
             <form onSubmit={handleAddGameSubmit} className="space-y-6">
               <input required type="text" value={newGameName} onChange={(e) => setNewGameName(e.target.value)} className="w-full bg-white/5 dark:bg-slate-900 light:bg-white border border-slate-500/10 rounded-xl p-4 dark:text-white focus:outline-none focus:border-emerald-500 font-bold" placeholder="Название игры" />
-              <input required type="text" value={newGameAvatar} onChange={(e) => setNewGameAvatar(e.target.value)} className="w-full bg-white/5 dark:bg-slate-900 light:bg-white border border-slate-500/10 rounded-xl p-4 dark:text-white focus:outline-none focus:border-emerald-500 font-medium" placeholder="Ссылка на обложку" />
+              <div className="space-y-3">
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Обложка игры</label>
+                <input
+                  required
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setNewGameAvatarFile(e.target.files?.[0] || null)}
+                  className="w-full bg-white/5 dark:bg-slate-900 light:bg-white border border-slate-500/10 rounded-xl p-4 dark:text-white focus:outline-none focus:border-emerald-500 font-medium file:mr-4 file:rounded-lg file:border-0 file:bg-emerald-600 file:px-4 file:py-2 file:text-xs file:font-black file:uppercase file:tracking-widest file:text-white hover:file:bg-emerald-500"
+                />
+                {newGameAvatarFile && (
+                  <p className="text-xs text-emerald-500 font-bold">{newGameAvatarFile.name}</p>
+                )}
+              </div>
               <textarea required rows={4} value={newGameDesc} onChange={(e) => setNewGameDesc(e.target.value)} className="w-full bg-white/5 dark:bg-slate-900 light:bg-white border border-slate-500/10 rounded-xl p-4 dark:text-white focus:outline-none focus:border-emerald-500 font-medium resize-none" placeholder="Описание" />
               <button type="submit" className="w-full py-5 bg-emerald-600 rounded-xl text-white font-orbitron font-bold tracking-[0.3em] uppercase hover:scale-105 transition-all shadow-xl">Создать</button>
             </form>
