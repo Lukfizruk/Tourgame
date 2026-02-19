@@ -424,12 +424,22 @@ const App: React.FC = () => {
       console.error('Failed to load user profile:', profileError.message);
     }
 
+    const authNickname = (currentAuthUser.user_metadata?.nickname as string) || (currentAuthUser.email?.split('@')[0] ?? 'User');
+
     if (!profileRow) {
       await supabase.from('users').upsert({
         id: currentAuthUser.id,
         email: currentAuthUser.email,
-        nickname: (currentAuthUser.user_metadata?.nickname as string) || (currentAuthUser.email?.split('@')[0] ?? 'User')
+        nickname: authNickname
       });
+    } else if (!(profileRow as DbUser).nickname && authNickname) {
+      const { error } = await supabase
+        .from('users')
+        .update({ nickname: authNickname })
+        .eq('id', currentAuthUser.id);
+      if (error) {
+        console.error('Failed to backfill nickname in users table:', error.message);
+      }
     }
 
     const { data: accountRows, error: accountsError } = await supabase
@@ -478,7 +488,7 @@ const App: React.FC = () => {
     const resolvedUser: User = {
       id: currentAuthUser.id,
       email: resolvedProfile?.email || currentAuthUser.email || '',
-      nickname: resolvedProfile?.nickname || (currentAuthUser.user_metadata?.nickname as string) || (currentAuthUser.email?.split('@')[0] ?? 'User'),
+      nickname: resolvedProfile?.nickname || authNickname,
       avatar: resolvedProfile?.avatar_url || DEFAULT_AVATAR,
       bio: resolvedProfile?.bio || '',
       balance: Number(resolvedProfile?.balance ?? 0),
@@ -527,7 +537,9 @@ const App: React.FC = () => {
 
       const resolvedApplications: TrainerApplication[] = resolvedAppRows.map(app => ({
         id: app.id,
-        nickname: appUsersMap[app.user_id]?.nickname || 'User',
+        nickname:
+          appUsersMap[app.user_id]?.nickname ||
+          (app.user_id === currentAuthUser.id ? (resolvedProfile?.nickname || authNickname) : 'User'),
         game: gamesById[app.game_id]?.name || 'Unknown game',
         champion: app.champion_id ? (championsById[app.champion_id]?.name || 'Any') : 'Any',
         status: app.status,
