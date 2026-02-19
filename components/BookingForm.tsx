@@ -72,6 +72,8 @@ export const BookingForm: React.FC<BookingFormProps> = ({ trainer, onBook, booki
     e.preventDefault();
     const totalPrice = (duration / 30) * (trainer.prices?.price30 || 750);
     onBook({
+      sessionId: trainer.sessionId || (trainer.isDynamic ? String(trainer.id) : undefined),
+      trainerId: trainer.trainerId,
       trainerName: trainer.name,
       game: trainer.game || 'Wild Rift',
       champion: trainer.champion || 'Unknown',

@@ -8,6 +8,8 @@ import { TrainerApplication } from './AdminPanel';
 
 export interface Trainer {
   id: string | number;
+  sessionId?: string;
+  trainerId?: string;
   name: string;
   specialization: string;
   game?: string;
@@ -20,35 +22,6 @@ export interface Trainer {
   isDynamic?: boolean;
   prices?: { price30: number };
 }
-
-const TRAINERS_DATA: Trainer[] = [
-  {
-    id: 1,
-    name: 'Алексей "Zilean" Волков',
-    specialization: 'Middle Lane Expert',
-    game: 'Wild Rift',
-    champion: 'Yasuo',
-    rating: 4.9,
-    reviews: 142,
-    price: '750 ₽ / 30 мин',
-    avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=300&h=300&auto=format&fit=crop',
-    availability: { startTime: '09:00', endTime: '22:00', days: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт'] },
-    prices: { price30: 750 }
-  },
-  {
-    id: 2,
-    name: 'Елена "Valkyrie" Ким',
-    specialization: 'Support Mastery',
-    game: 'Wild Rift',
-    champion: 'Lux',
-    rating: 5.0,
-    reviews: 89,
-    price: '1 000 ₽ / 30 мин',
-    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=300&h=300&auto=format&fit=crop',
-    availability: { startTime: '10:00', endTime: '18:00', days: ['Сб', 'Вс'] },
-    prices: { price30: 1000 }
-  }
-];
 
 interface TrainersGalleryProps {
   onBack: () => void;
@@ -81,6 +54,8 @@ export const TrainersGallery: React.FC<TrainersGalleryProps> = ({
 
   const dynamicTrainers: Trainer[] = activeSessions.map(session => ({
     id: session.id,
+    sessionId: session.id,
+    trainerId: session.trainerId,
     name: session.trainerName,
     specialization: `${session.game} • ${session.champion}`,
     game: session.game,
@@ -94,7 +69,7 @@ export const TrainersGallery: React.FC<TrainersGalleryProps> = ({
     prices: { price30: session.price30 }
   }));
 
-  const allTrainers = [...dynamicTrainers, ...TRAINERS_DATA];
+  const allTrainers = dynamicTrainers;
 
   const renderTrainerAction = () => {
     if (!currentUser) return null;
