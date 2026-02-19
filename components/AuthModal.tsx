@@ -1,9 +1,10 @@
 
 import React, { useState } from 'react';
+import { supabase } from '../lib/supabase';
 
 interface AuthModalProps {
   onClose: () => void;
-  onSuccess: (nickname: string, email: string) => void;
+  onSuccess: (payload: { id: string; nickname: string; email: string }) => void;
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
@@ -14,29 +15,76 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setIsSubmitting(true);
 
-    if (mode === 'register') {
-      if (password !== confirmPassword) {
-        setError('Пароли не совпадают');
+    try {
+      if (mode === 'register') {
+        if (password !== confirmPassword) {
+          setError('Пароли не совпадают');
+          return;
+        }
+        if (password.length < 6) {
+          setError('Пароль слишком короткий (мин. 6 символов)');
+          return;
+        }
+
+        const { data, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              nickname
+            }
+          }
+        });
+
+        if (signUpError) {
+          setError(signUpError.message);
+          return;
+        }
+
+        const authUser = data.user;
+        if (!authUser) {
+          setError('Проверьте почту и подтвердите регистрацию.');
+          return;
+        }
+
+        onSuccess({
+          id: authUser.id,
+          email: authUser.email ?? email,
+          nickname: (authUser.user_metadata?.nickname as string) || nickname
+        });
         return;
       }
-      if (password.length < 6) {
-        setError('Пароль слишком короткий (мин. 6 символов)');
+
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (signInError) {
+        setError(signInError.message);
         return;
       }
-      onSuccess(nickname, email);
-    } else {
-      // Mock login logic
-      if (password.length < 6) {
-        setError('Неверный пароль');
+
+      const authUser = data.user;
+      if (!authUser) {
+        setError('Не удалось получить данные пользователя.');
         return;
       }
-      // For mock login, we use the email prefix as a nickname if none exists
-      const mockNickname = email.split('@')[0];
-      onSuccess(mockNickname, email);
+
+      onSuccess({
+        id: authUser.id,
+        email: authUser.email ?? email,
+        nickname: (authUser.user_metadata?.nickname as string) || (authUser.email?.split('@')[0] ?? 'User')
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -114,9 +162,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
 
           <button 
             type="submit"
+            disabled={isSubmitting}
             className="w-full py-5 bg-gradient-to-r from-emerald-600 to-teal-700 rounded-xl text-white font-orbitron font-bold tracking-[0.2em] uppercase hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_30px_rgba(16,185,129,0.3)] mt-4"
           >
-            {mode === 'register' ? 'Зарегистрироваться' : 'Войти'}
+            {isSubmitting ? 'Загрузка...' : mode === 'register' ? 'Зарегистрироваться' : 'Войти'}
           </button>
         </form>
 

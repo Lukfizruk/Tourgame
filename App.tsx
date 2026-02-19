@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import type { User as SupabaseAuthUser } from '@supabase/supabase-js';
 import { Hero } from './components/Hero';
 import { Features } from './components/Features';
 import { Navbar } from './components/Navbar';
@@ -168,6 +169,66 @@ const App: React.FC = () => {
     };
   }, []);
 
+  const toAppUser = (authUser: SupabaseAuthUser, nicknameFromDb?: string): User => ({
+    id: authUser.id,
+    email: authUser.email ?? '',
+    nickname: nicknameFromDb || (authUser.user_metadata?.nickname as string) || (authUser.email?.split('@')[0] ?? 'User'),
+    balance: 1000,
+    avatar: 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?q=80&w=200&h=200&auto=format&fit=crop',
+    accounts: [],
+    events: []
+  });
+
+  const loadCurrentUser = async (authUser: SupabaseAuthUser) => {
+    const { data } = await supabase
+      .from('users')
+      .select('nickname')
+      .eq('id', authUser.id)
+      .single();
+
+    const resolved = toAppUser(authUser, (data?.nickname as string | undefined));
+    setUser(prev => {
+      if (prev && prev.id === resolved.id) {
+        return {
+          ...resolved,
+          balance: prev.balance,
+          avatar: prev.avatar,
+          accounts: prev.accounts,
+          events: prev.events,
+          bio: prev.bio
+        };
+      }
+      return resolved;
+    });
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const bootstrapUser = async () => {
+      const { data } = await supabase.auth.getSession();
+      const authUser = data.session?.user;
+      if (isMounted && authUser) {
+        await loadCurrentUser(authUser);
+      }
+    };
+
+    bootstrapUser();
+
+    const { data: authSubscription } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!session?.user) {
+        setUser(null);
+        return;
+      }
+      await loadCurrentUser(session.user);
+    });
+
+    return () => {
+      isMounted = false;
+      authSubscription.subscription.unsubscribe();
+    };
+  }, []);
+
   const addEvent = (event: Omit<ProfileEvent, 'id' | 'timestamp'>) => {
     if (!user) return;
     const newEvent: ProfileEvent = {
@@ -206,17 +267,17 @@ const App: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleRegister = (nickname: string, email: string) => {
-    const newUser: User = {
-      id: Math.random().toString(36).substr(2, 9),
+  const handleAuthSuccess = ({ id, nickname, email }: { id: string; nickname: string; email: string }) => {
+    setUser(prev => ({
+      id,
       email,
       nickname,
-      balance: 1000,
-      avatar: 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?q=80&w=200&h=200&auto=format&fit=crop',
-      accounts: [],
-      events: []
-    };
-    setUser(newUser);
+      balance: prev?.balance ?? 1000,
+      avatar: prev?.avatar ?? 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?q=80&w=200&h=200&auto=format&fit=crop',
+      accounts: prev?.accounts ?? [],
+      events: prev?.events ?? [],
+      bio: prev?.bio
+    }));
     setIsAuthModalOpen(false);
   };
 
@@ -440,7 +501,7 @@ const App: React.FC = () => {
       {isAuthModalOpen && (
         <AuthModal 
           onClose={() => setIsAuthModalOpen(false)} 
-          onSuccess={handleRegister} 
+          onSuccess={handleAuthSuccess} 
         />
       )}
     </div>
