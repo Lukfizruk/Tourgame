@@ -6,14 +6,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tourgame - Gaming Platform</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;900&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              emerald: {
+                50: '#f0fdf4',
+                100: '#dcfce7',
+                200: '#bbf7d0',
+                300: '#86efac',
+                400: '#4ade80',
+                500: '#065f46', // Темный изумрудный
+                600: '#059669',
+                700: '#047857',
+                800: '#064e3b', // Еще более темный
+                900: '#022c22',
+              }
+            }
+          }
+        }
+      }
+    </script>
     <style>
         :root {
             --bg-color: #020617;
             --text-color: #f8fafc;
             --card-bg: rgba(15, 23, 42, 0.4);
-            --card-border: rgba(16, 185, 129, 0.15);
-            --accent-color: #10b981;
+            --card-border: rgba(6, 78, 59, 0.2);
+            --accent-color: #065f46;
             --muted-text: #94a3b8;
         }
 
@@ -21,8 +43,8 @@
             --bg-color: #f8fafc;
             --text-color: #0f172a;
             --card-bg: rgba(255, 255, 255, 0.8);
-            --card-border: rgba(16, 185, 129, 0.25);
-            --accent-color: #059669;
+            --card-border: rgba(6, 78, 59, 0.15);
+            --accent-color: #064e3b;
             --muted-text: #64748b;
         }
 
@@ -37,18 +59,17 @@
             font-family: 'Orbitron', sans-serif;
         }
         
-        /* Цифры всегда солидным шрифтом Inter */
         .num-font {
             font-family: 'Inter', sans-serif !important;
             letter-spacing: -0.02em;
         }
 
         .glow-text {
-            text-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+            text-shadow: 0 0 15px rgba(6, 95, 70, 0.3);
         }
         
         .light-theme .glow-text {
-            text-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
+            text-shadow: 0 0 8px rgba(6, 95, 70, 0.1);
         }
 
         .glass-card {
@@ -74,7 +95,6 @@
             animation-play-state: paused;
         }
         
-        /* Custom scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
         }

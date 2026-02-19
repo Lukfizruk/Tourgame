@@ -198,6 +198,7 @@ const App: React.FC = () => {
   const [activeSessions, setActiveSessions] = useState<SessionActivity[]>([]);
   const [bookings, setBookings] = useState<BookingRecord[]>([]);
   const [games, setGames] = useState<Game[]>([]);
+  const [allUsers, setAllUsers] = useState<User[]>([]);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const userRef = useRef<User | null>(null);
 
@@ -324,6 +325,32 @@ const App: React.FC = () => {
       acc[champion.id] = champion;
       return acc;
     }, {});
+
+    if (!currentAuthUser) {
+      setAllUsers([]);
+    } else {
+      const { data: allUserRows, error: allUsersError } = await supabase
+        .from('users')
+        .select('id, email, nickname, avatar_url, bio, balance')
+        .order('email');
+
+      if (allUsersError) {
+        console.error('Failed to load users list:', allUsersError.message);
+        setAllUsers([]);
+      } else {
+        const resolvedAllUsers: User[] = ((allUserRows || []) as DbUser[]).map(dbUser => ({
+          id: dbUser.id,
+          email: dbUser.email || '',
+          nickname: dbUser.nickname || (dbUser.email?.split('@')[0] ?? 'User'),
+          balance: Number(dbUser.balance ?? 0),
+          avatar: dbUser.avatar_url || DEFAULT_AVATAR,
+          bio: dbUser.bio || '',
+          accounts: [],
+          events: []
+        }));
+        setAllUsers(resolvedAllUsers);
+      }
+    }
 
     const { data: sessionRows, error: sessionsError } = await supabase
       .from('trainer_sessions')
@@ -989,6 +1016,7 @@ const App: React.FC = () => {
             games={games}
             activeSessions={activeSessions}
             bookings={bookings}
+            users={allUsers}
             onAddGame={handleAddGame}
             onAddChampion={handleAddChampion}
             onBack={handleNavigateHome}

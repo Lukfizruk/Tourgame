@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Game, Champion, SessionActivity, BookingRecord } from '../App';
+import { Game, Champion, SessionActivity, BookingRecord, User } from '../App';
 
 export interface TrainerApplication {
   id: string;
@@ -17,12 +17,13 @@ interface AdminPanelProps {
   games: Game[];
   activeSessions: SessionActivity[];
   bookings: BookingRecord[];
+  users: User[];
   onAddGame: (game: { name: string; description: string; avatarFile: File }) => Promise<void> | void;
   onAddChampion: (gameId: string, champion: Omit<Champion, 'id'>) => void;
   onBack: () => void;
 }
 
-type AdminTab = 'apps' | 'games' | 'offers' | 'bookings';
+type AdminTab = 'apps' | 'games' | 'offers' | 'bookings' | 'users';
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ 
   applications, 
@@ -30,6 +31,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   games,
   activeSessions,
   bookings,
+  users,
   onAddGame,
   onAddChampion,
   onBack 
@@ -75,6 +77,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     { id: 'games' as const, label: 'Игры' },
     { id: 'offers' as const, label: 'Предложения' },
     { id: 'bookings' as const, label: 'Записи' },
+    { id: 'users' as const, label: 'Пользователи' },
   ];
 
   return (
@@ -154,6 +157,59 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                                 </div>
                               )}
                             </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* TAB: Users */}
+            {activeTab === 'users' && (
+              <div className="glass-card rounded-[2.5rem] overflow-hidden shadow-lg border-emerald-500/10">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-500/10 bg-slate-500/5">
+                        <th className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest">Пользователь</th>
+                        <th className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest">Email</th>
+                        <th className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest">Баланс</th>
+                        <th className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest">Аккаунты</th>
+                        <th className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right">ID</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-500/5">
+                      {users.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="px-8 py-20 text-center text-slate-500 italic">
+                            Пользователей пока нет.
+                          </td>
+                        </tr>
+                      ) : (
+                        users.map((accountUser) => (
+                          <tr key={accountUser.id} className="hover:bg-slate-500/5 transition-colors">
+                            <td className="px-8 py-6">
+                              <div className="flex items-center space-x-3">
+                                <img
+                                  src={accountUser.avatar}
+                                  className="w-9 h-9 rounded-full object-cover border border-emerald-500/20"
+                                  alt={accountUser.nickname}
+                                />
+                                <span className="font-bold text-sm dark:text-white light:text-slate-900">{accountUser.nickname}</span>
+                              </div>
+                            </td>
+                            <td className="px-8 py-6 text-slate-500 text-xs font-medium">{accountUser.email}</td>
+                            <td className="px-8 py-6 font-black num-font dark:text-emerald-400 light:text-emerald-600">
+                              {accountUser.balance.toLocaleString()} ₽
+                            </td>
+                            <td className="px-8 py-6">
+                              <span className="px-2 py-0.5 bg-slate-500/10 rounded text-[10px] font-black uppercase tracking-widest">
+                                {accountUser.accounts.length} акк.
+                              </span>
+                            </td>
+                            <td className="px-8 py-6 text-right font-mono text-[10px] text-slate-600">{accountUser.id}</td>
                           </tr>
                         ))
                       )}
