@@ -674,6 +674,14 @@ const App: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error('Failed to sign out:', error.message);
+    }
+    setCurrentView('home');
+  };
+
   const handleAuthSuccess = ({ id, nickname, email }: { id: string; nickname: string; email: string }) => {
     setUser(prev => ({
       id,
@@ -971,6 +979,7 @@ const App: React.FC = () => {
             user={user!}
             onUpdate={handleUpdateUser}
             onBack={handleNavigateHome}
+            onLogout={handleLogout}
             applications={applications}
             bookings={bookings}
           />

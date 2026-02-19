@@ -7,13 +7,14 @@ interface ProfilePageProps {
   user: User;
   onUpdate: (fields: Partial<User>) => void;
   onBack: () => void;
+  onLogout: () => void;
   applications: TrainerApplication[];
   bookings: BookingRecord[];
 }
 
 type ProfileTab = 'feed' | 'training' | 'tournaments' | 'duels' | 'settings';
 
-export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onUpdate, onBack, applications, bookings }) => {
+export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onUpdate, onBack, onLogout, applications, bookings }) => {
   const [activeTab, setActiveTab] = useState<ProfileTab>('feed');
   const [nickname, setNickname] = useState(user.nickname);
   const [bio, setBio] = useState(user.bio || '');
@@ -248,7 +249,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onUpdate, onBack
                     <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3">О себе</label>
                     <textarea rows={5} value={bio} onChange={(e) => setBio(e.target.value)} className="w-full bg-slate-500/5 dark:bg-slate-900 border border-slate-500/10 rounded-2xl p-5 dark:text-white focus:outline-none focus:border-emerald-500 resize-none" />
                   </div>
-                  <div className="pt-6"><button onClick={handleSave} className="px-12 py-5 bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl text-white font-orbitron font-bold tracking-[0.3em] uppercase hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl">Сохранить</button></div>
+                  <div className="pt-6 flex flex-col sm:flex-row gap-4">
+                    <button onClick={handleSave} className="px-12 py-5 bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl text-white font-orbitron font-bold tracking-[0.3em] uppercase hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl">Сохранить</button>
+                    <button onClick={onLogout} className="px-12 py-5 bg-red-500/10 border border-red-500/30 rounded-2xl text-red-500 font-orbitron font-bold tracking-[0.3em] uppercase hover:bg-red-500/20 transition-all">Выйти</button>
+                  </div>
                 </div>
               </div>
             )}
