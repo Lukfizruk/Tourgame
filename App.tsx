@@ -8,6 +8,7 @@ import { TrainersGallery } from './components/TrainersGallery';
 import { AuthModal } from './components/AuthModal';
 import { ProfilePage } from './components/ProfilePage';
 import { AdminPanel, TrainerApplication } from './components/AdminPanel';
+import { supabase } from './lib/supabase';
 
 export interface Champion {
   id: string;
@@ -83,10 +84,16 @@ export interface BookingRecord {
   status: 'upcoming' | 'completed';
 }
 
-const INITIAL_APPS: TrainerApplication[] = [
-  { id: '1', nickname: 'NoobMaster69', game: 'Dota 2', champion: 'Pudge', status: 'pending', date: '2024-05-20' },
-  { id: '2', nickname: 'ShadowFiend', game: 'Wild Rift', champion: 'Zed', status: 'pending', date: '2024-05-21' }
-];
+type SupabaseApplicationRow = {
+  id: number | string;
+  nickname: string;
+  game: string;
+  champion: string;
+  status: TrainerApplication['status'];
+  created_at: string;
+};
+
+const INITIAL_APPS: TrainerApplication[] = [];
 
 const INITIAL_GAMES: Game[] = [
   {
@@ -120,9 +127,46 @@ const App: React.FC = () => {
   const [games, setGames] = useState<Game[]>(INITIAL_GAMES);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
+  const mapApplicationRow = (row: SupabaseApplicationRow): TrainerApplication => ({
+    id: String(row.id),
+    nickname: row.nickname,
+    game: row.game,
+    champion: row.champion,
+    status: row.status,
+    date: row.created_at.split('T')[0]
+  });
+
   useEffect(() => {
     document.body.className = theme === 'light' ? 'light-theme' : '';
   }, [theme]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadApplications = async () => {
+      const { data, error } = await supabase
+        .from('applications')
+        .select('id, nickname, game, champion, status, created_at')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Failed to load applications:', error.message);
+        return;
+      }
+
+      if (!isMounted || !data) {
+        return;
+      }
+
+      setApplications((data as SupabaseApplicationRow[]).map(mapApplicationRow));
+    };
+
+    loadApplications();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const addEvent = (event: Omit<ProfileEvent, 'id' | 'timestamp'>) => {
     if (!user) return;
@@ -188,15 +232,38 @@ const App: React.FC = () => {
     }
   };
 
-  const handleAddApplication = (app: Omit<TrainerApplication, 'id' | 'status' | 'date'>) => {
+  const handleAddApplication = async (app: Omit<TrainerApplication, 'id' | 'status' | 'date'>) => {
+    const tempId = Math.random().toString(36).substr(2, 9);
     const newApp: TrainerApplication = {
       ...app,
-      id: Math.random().toString(36).substr(2, 9),
+      id: tempId,
       status: 'pending',
       date: new Date().toISOString().split('T')[0]
     };
     setApplications(prev => [newApp, ...prev]);
-    
+
+    const { data, error } = await supabase
+      .from('applications')
+      .insert({
+        nickname: app.nickname,
+        game: app.game,
+        champion: app.champion,
+        status: 'pending'
+      })
+      .select('id, nickname, game, champion, status, created_at')
+      .single();
+
+    if (error) {
+      console.error('Failed to create application:', error.message);
+      setApplications(prev => prev.filter(item => item.id !== tempId));
+      return;
+    }
+
+    if (data) {
+      const savedApp = mapApplicationRow(data as SupabaseApplicationRow);
+      setApplications(prev => prev.map(item => item.id === tempId ? savedApp : item));
+    }
+
     addEvent({
       type: 'application',
       title: 'Заявка отправлена',
@@ -205,9 +272,30 @@ const App: React.FC = () => {
     });
   };
 
-  const handleUpdateApplicationStatus = (id: string, status: 'approved' | 'rejected') => {
-    setApplications(prev => prev.map(app => app.id === id ? { ...app, status } : app));
-    
+  const handleUpdateApplicationStatus = async (id: string, status: 'approved' | 'rejected') => {
+    let previousStatus: TrainerApplication['status'] | undefined;
+    setApplications(prev => prev.map(app => {
+      if (app.id !== id) {
+        return app;
+      }
+      previousStatus = app.status;
+      return { ...app, status };
+    }));
+
+    const idFilter = /^\d+$/.test(id) ? Number(id) : id;
+    const { error } = await supabase
+      .from('applications')
+      .update({ status })
+      .eq('id', idFilter);
+
+    if (error) {
+      console.error('Failed to update application status:', error.message);
+      if (previousStatus) {
+        setApplications(prev => prev.map(app => app.id === id ? { ...app, status: previousStatus! } : app));
+      }
+      return;
+    }
+
     const targetApp = applications.find(a => a.id === id);
     if (targetApp && user && targetApp.nickname === user.nickname) {
       addEvent({
