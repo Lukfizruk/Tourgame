@@ -16,6 +16,23 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
   const [error, setError] = useState('');
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const toReadableAuthError = (message: string) => {
+    const lower = message.toLowerCase();
+    if (lower.includes('email not confirmed')) {
+      return 'Почта не подтверждена. Откройте письмо от Supabase и подтвердите email.';
+    }
+    if (lower.includes('invalid login credentials')) {
+      return 'Неверный email или пароль.';
+    }
+    if (lower.includes('user already registered')) {
+      return 'Пользователь с таким email уже зарегистрирован.';
+    }
+    if (lower.includes('password should be at least')) {
+      return 'Пароль слишком короткий (минимум 6 символов).';
+    }
+    return message;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,7 +61,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
         });
 
         if (signUpError) {
-          setError(signUpError.message);
+          setError(toReadableAuthError(signUpError.message));
           return;
         }
 
@@ -68,7 +85,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
       });
 
       if (signInError) {
-        setError(signInError.message);
+        setError(toReadableAuthError(signInError.message));
         return;
       }
 
