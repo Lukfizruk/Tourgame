@@ -9,6 +9,7 @@ export interface TrainerApplication {
   champion: string;
   status: 'pending' | 'approved' | 'rejected';
   date: string;
+  interviewTime?: string;
 }
 
 interface AdminPanelProps {
@@ -126,6 +127,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       <tr className="border-b border-slate-500/10 bg-slate-500/5">
                         <th className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest">Никнейм</th>
                         <th className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest">Игра</th>
+                        <th className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest">Собеседование</th>
                         <th className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest">Дата</th>
                         <th className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest">Статус</th>
                         <th className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right">Действия</th>
@@ -133,12 +135,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     </thead>
                     <tbody className="divide-y divide-slate-500/5">
                       {applications.length === 0 ? (
-                        <tr><td colSpan={5} className="px-8 py-20 text-center text-slate-500 italic">Заявок пока нет.</td></tr>
+                        <tr><td colSpan={6} className="px-8 py-20 text-center text-slate-500 italic">Заявок пока нет.</td></tr>
                       ) : (
                         applications.map((app) => (
                           <tr key={app.id} className="hover:bg-slate-500/5 transition-colors">
                             <td className="px-8 py-6 font-bold dark:text-white light:text-slate-900 text-sm">{app.nickname}</td>
                             <td className="px-8 py-6 text-emerald-500 text-xs font-black uppercase tracking-wider">{app.game}</td>
+                            <td className="px-8 py-6 text-emerald-500 text-xs font-black uppercase tracking-wider">
+                              {app.interviewTime || 'Не назначено'}
+                            </td>
                             <td className="px-8 py-6 text-slate-500 text-xs num-font">{app.date}</td>
                             <td className="px-8 py-6">
                               <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${

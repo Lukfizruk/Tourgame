@@ -10,6 +10,7 @@ import { ProfilePage } from './components/ProfilePage';
 import { AdminPanel, TrainerApplication } from './components/AdminPanel';
 import { TournamentsPage } from './components/TournamentsPage';
 import { TournamentDetailPage } from './components/TournamentDetailPage';
+import { TrainerDetailPage } from './components/TrainerDetailPage';
 import { supabase } from './lib/supabase';
 
 export interface Champion {
@@ -133,6 +134,7 @@ type DbApplication = {
   user_id: string;
   game_id: string;
   champion_id: string | null;
+  interview_time: string | null;
   status: TrainerApplication['status'];
   created_at: string;
 };
@@ -255,8 +257,9 @@ const weekdayLabelFromIsoDate = (isoDate: string): string => {
 };
 
 const App: React.FC = () => {
-  const [currentView, setCurrentView] = useState<'home' | 'trainers' | 'tournaments' | 'tournament_detail' | 'profile' | 'admin'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'trainers' | 'trainer_detail' | 'tournaments' | 'tournament_detail' | 'profile' | 'admin'>('home');
   const [selectedTournamentId, setSelectedTournamentId] = useState<string | null>(null);
+  const [selectedTrainerId, setSelectedTrainerId] = useState<string | number | null>(null);
   const [authUser, setAuthUser] = useState<SupabaseAuthUser | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -594,10 +597,26 @@ const App: React.FC = () => {
       events: resolvedEvents.length > 0 ? resolvedEvents : (prev?.events ?? [])
     }));
 
-    const { data: appRows, error: appError } = await supabase
+    const appSelect = 'id, user_id, game_id, champion_id, status, created_at';
+    let appRows: unknown[] | null = null;
+    let appError: { message: string } | null = null;
+
+    const appQueryWithInterview = await supabase
       .from('trainer_applications')
-      .select('id, user_id, game_id, champion_id, status, created_at')
+      .select(`${appSelect}, interview_time`)
       .order('created_at', { ascending: false });
+
+    if (appQueryWithInterview.error && appQueryWithInterview.error.message.toLowerCase().includes('interview_time')) {
+      const legacyQuery = await supabase
+        .from('trainer_applications')
+        .select(appSelect)
+        .order('created_at', { ascending: false });
+      appRows = legacyQuery.data as unknown[] | null;
+      appError = legacyQuery.error as { message: string } | null;
+    } else {
+      appRows = appQueryWithInterview.data as unknown[] | null;
+      appError = appQueryWithInterview.error as { message: string } | null;
+    }
 
     if (appError) {
       console.error('Failed to load trainer applications:', appError.message);
@@ -630,6 +649,7 @@ const App: React.FC = () => {
           (app.user_id === currentAuthUser.id ? (resolvedProfile?.nickname || authNickname) : 'User'),
         game: gamesById[app.game_id]?.name || 'Unknown game',
         champion: app.champion_id ? (championsById[app.champion_id]?.name || 'Any') : 'Any',
+        interviewTime: app.interview_time || undefined,
         status: app.status,
         date: app.created_at.split('T')[0]
       }));
@@ -739,6 +759,12 @@ const App: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleNavigateToTrainerDetail = (id: string | number) => {
+    setSelectedTrainerId(id);
+    setCurrentView('trainer_detail');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleNavigateToTournaments = () => {
     setCurrentView('tournaments');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -829,7 +855,7 @@ const App: React.FC = () => {
     }
   };
 
-  const handleAddApplication = async (app: Omit<TrainerApplication, 'id' | 'status' | 'date'>) => {
+  const handleAddApplication = async (app: { nickname: string; game: string; champion: string; interviewTime: string }) => {
     if (!authUser) {
       setIsAuthModalOpen(true);
       return;
@@ -843,14 +869,27 @@ const App: React.FC = () => {
       return;
     }
 
-    const { error } = await supabase
+    let { error } = await supabase
       .from('trainer_applications')
       .insert({
         user_id: authUser.id,
         game_id: game.id,
         champion_id: champion?.id || null,
+        interview_time: app.interviewTime,
         status: 'pending'
       });
+
+    if (error && error.message.toLowerCase().includes('interview_time')) {
+      const legacyInsert = await supabase
+        .from('trainer_applications')
+        .insert({
+          user_id: authUser.id,
+          game_id: game.id,
+          champion_id: champion?.id || null,
+          status: 'pending'
+        });
+      error = legacyInsert.error;
+    }
 
     if (error) {
       console.error('Failed to create trainer application:', error.message);
@@ -862,7 +901,7 @@ const App: React.FC = () => {
     await addEvent({
       type: 'application',
       title: 'Заявка отправлена',
-      description: `Вы подали заявку на роль тренера в игре ${app.game}.`,
+      description: `Вы подали заявку на роль тренера в игре ${app.game}. Собеседование: ${app.interviewTime}.`,
       icon: '📨'
     });
   };
@@ -1068,10 +1107,20 @@ const App: React.FC = () => {
             onApply={handleAddApplication}
             onCreateSession={handleCreateSession}
             onBook={handleCreateBooking}
+            onSelectTrainer={handleNavigateToTrainerDetail}
             currentUser={user}
             applications={applications}
             activeSessions={activeSessions}
             bookings={bookings}
+            games={games}
+          />
+        ) : currentView === 'trainer_detail' ? (
+          <TrainerDetailPage
+            trainerId={selectedTrainerId}
+            onBack={handleNavigateToTrainers}
+            onBook={handleCreateBooking}
+            bookings={bookings}
+            activeSessions={activeSessions}
             games={games}
           />
         ) : currentView === 'tournaments' ? (
