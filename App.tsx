@@ -266,7 +266,6 @@ const App: React.FC = () => {
   const [games, setGames] = useState<Game[]>([]);
   const [tournaments] = useState<Tournament[]>(INITIAL_TOURNAMENTS);
   const [allUsers, setAllUsers] = useState<User[]>([]);
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const userRef = useRef<User | null>(null);
 
   const addEvent = useCallback(async (event: Omit<ProfileEvent, 'id' | 'timestamp'>) => {
@@ -697,10 +696,6 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    document.body.className = theme === 'light' ? 'light-theme' : '';
-  }, [theme]);
-
-  useEffect(() => {
     userRef.current = user;
   }, [user]);
 
@@ -738,10 +733,6 @@ const App: React.FC = () => {
       setCurrentView('home');
     }
   }, [user, currentView]);
-
-  const toggleTheme = () => {
-    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
-  };
 
   const handleNavigateToTrainers = () => {
     setCurrentView('trainers');
@@ -1058,8 +1049,6 @@ const App: React.FC = () => {
         onTournamentsClick={handleNavigateToTournaments}
         onTrainingsClick={handleNavigateToTrainers}
         onLoginClick={() => setIsAuthModalOpen(true)}
-        onThemeToggle={toggleTheme}
-        theme={theme}
         user={user}
       />
 

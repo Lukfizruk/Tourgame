@@ -13,16 +13,16 @@
           extend: {
             colors: {
               emerald: {
-                50: '#f0fdf4',
-                100: '#dcfce7',
-                200: '#bbf7d0',
-                300: '#86efac',
-                400: '#4ade80',
-                500: '#065f46', // Темный изумрудный
-                600: '#059669',
-                700: '#047857',
-                800: '#064e3b', // Еще более темный
-                900: '#022c22',
+                50: '#f0fff9',
+                100: '#ccffeb',
+                200: '#99ffd8',
+                300: '#66ffc5',
+                400: '#33ffb1',
+                500: '#00ff9d', // Максимально яркий неоновый зеленый
+                600: '#00e68e',
+                700: '#00cc7e',
+                800: '#00b36f',
+                900: '#00995f',
               }
             }
           }
@@ -33,26 +33,17 @@
         :root {
             --bg-color: #020617;
             --text-color: #f8fafc;
-            --card-bg: rgba(15, 23, 42, 0.4);
-            --card-border: rgba(6, 78, 59, 0.2);
-            --accent-color: #065f46;
+            --card-bg: rgba(15, 23, 42, 0.6);
+            --card-border: rgba(0, 255, 157, 0.25);
+            --accent-color: #00ff9d;
             --muted-text: #94a3b8;
-        }
-
-        .light-theme {
-            --bg-color: #f8fafc;
-            --text-color: #0f172a;
-            --card-bg: rgba(255, 255, 255, 0.8);
-            --card-border: rgba(6, 78, 59, 0.15);
-            --accent-color: #064e3b;
-            --muted-text: #64748b;
         }
 
         body {
             font-family: 'Inter', sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
-            transition: background-color 0.3s ease, color 0.3s ease;
+            transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), color 0.4s ease;
         }
         
         .font-orbitron {
@@ -65,21 +56,14 @@
         }
 
         .glow-text {
-            text-shadow: 0 0 15px rgba(6, 95, 70, 0.3);
-        }
-        
-        .light-theme .glow-text {
-            text-shadow: 0 0 8px rgba(6, 95, 70, 0.1);
+            text-shadow: 0 0 20px rgba(0, 255, 157, 0.6), 0 0 40px rgba(0, 255, 157, 0.2);
         }
 
         .glass-card {
             background: var(--card-bg);
-            backdrop-filter: blur(12px);
+            backdrop-filter: blur(16px);
             border: 1px solid var(--card-border);
-        }
-        
-        .light-theme .glass-card {
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.2);
         }
 
         @keyframes scroll {
@@ -89,7 +73,7 @@
         .animate-scroll {
             display: flex;
             width: max-content;
-            animation: scroll 30s linear infinite;
+            animation: scroll 35s linear infinite;
         }
         .animate-scroll:hover {
             animation-play-state: paused;
@@ -99,14 +83,25 @@
             width: 8px;
         }
         ::-webkit-scrollbar-track {
-            background: transparent;
+            background: rgba(0,0,0,0.1);
         }
         ::-webkit-scrollbar-thumb {
             background: var(--card-border);
             border-radius: 10px;
+            border: 2px solid transparent;
+            background-clip: content-box;
         }
         ::-webkit-scrollbar-thumb:hover {
             background: var(--accent-color);
+            border: 2px solid transparent;
+            background-clip: content-box;
+        }
+
+        .neon-glow {
+            box-shadow: 0 0 15px rgba(0, 255, 157, 0.4);
+        }
+        .hover-neon:hover {
+            box-shadow: 0 0 25px rgba(0, 255, 157, 0.5);
         }
     </style>
 <script type="importmap">
