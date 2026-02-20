@@ -8,6 +8,8 @@ import { TrainersGallery } from './components/TrainersGallery';
 import { AuthModal } from './components/AuthModal';
 import { ProfilePage } from './components/ProfilePage';
 import { AdminPanel, TrainerApplication } from './components/AdminPanel';
+import { TournamentsPage } from './components/TournamentsPage';
+import { TournamentDetailPage } from './components/TournamentDetailPage';
 import { supabase } from './lib/supabase';
 
 export interface Champion {
@@ -90,6 +92,19 @@ export interface BookingRecord {
   status: 'upcoming' | 'completed';
 }
 
+export interface Tournament {
+  id: string;
+  title: string;
+  game: string;
+  prizePool: string;
+  entryFee: string;
+  status: 'active' | 'completed' | 'upcoming';
+  date: string;
+  participants: number;
+  maxParticipants: number;
+  image: string;
+}
+
 type DbGame = {
   id: string;
   name: string;
@@ -168,6 +183,56 @@ type DbUserGameAccount = {
 
 const DEFAULT_AVATAR = 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?q=80&w=200&h=200&auto=format&fit=crop';
 const DAY_LABELS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+const INITIAL_TOURNAMENTS: Tournament[] = [
+  {
+    id: 't1',
+    title: 'Wild Rift: Spring Brawl',
+    game: 'Wild Rift',
+    prizePool: '50 000 ₽',
+    entryFee: '500 ₽',
+    status: 'active',
+    date: '25 мая, 18:00',
+    participants: 12,
+    maxParticipants: 32,
+    image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=600&h=400&auto=format&fit=crop'
+  },
+  {
+    id: 't2',
+    title: 'Dota 2: Community Cup',
+    game: 'Dota 2',
+    prizePool: '25 000 ₽',
+    entryFee: 'Бесплатно',
+    status: 'active',
+    date: '28 мая, 19:00',
+    participants: 45,
+    maxParticipants: 64,
+    image: 'https://images.unsplash.com/photo-1580234811497-9df7fd2f357e?q=80&w=600&h=400&auto=format&fit=crop'
+  },
+  {
+    id: 't3',
+    title: 'Pro Duel Invitational',
+    game: 'Wild Rift',
+    prizePool: '100 000 ₽',
+    entryFee: '1 500 ₽',
+    status: 'upcoming',
+    date: '5 июня, 17:00',
+    participants: 0,
+    maxParticipants: 16,
+    image: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=600&h=400&auto=format&fit=crop'
+  },
+  {
+    id: 't4',
+    title: 'Winter Major 2023',
+    game: 'Dota 2',
+    prizePool: '200 000 ₽',
+    entryFee: '1 000 ₽',
+    status: 'completed',
+    date: '15 декабря, 2023',
+    participants: 128,
+    maxParticipants: 128,
+    image: 'https://images.unsplash.com/photo-1560419015-7c427e8ae5ba?q=80&w=600&h=400&auto=format&fit=crop'
+  }
+];
 
 const weekdayToLabel = (weekday: number) => DAY_LABELS[Math.max(1, Math.min(7, weekday)) - 1];
 const labelToWeekday = (label: string) => Math.max(1, DAY_LABELS.indexOf(label) + 1);
@@ -190,7 +255,8 @@ const weekdayLabelFromIsoDate = (isoDate: string): string => {
 };
 
 const App: React.FC = () => {
-  const [currentView, setCurrentView] = useState<'home' | 'trainers' | 'profile' | 'admin'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'trainers' | 'tournaments' | 'tournament_detail' | 'profile' | 'admin'>('home');
+  const [selectedTournamentId, setSelectedTournamentId] = useState<string | null>(null);
   const [authUser, setAuthUser] = useState<SupabaseAuthUser | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -198,6 +264,7 @@ const App: React.FC = () => {
   const [activeSessions, setActiveSessions] = useState<SessionActivity[]>([]);
   const [bookings, setBookings] = useState<BookingRecord[]>([]);
   const [games, setGames] = useState<Game[]>([]);
+  const [tournaments] = useState<Tournament[]>(INITIAL_TOURNAMENTS);
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const userRef = useRef<User | null>(null);
@@ -681,6 +748,17 @@ const App: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleNavigateToTournaments = () => {
+    setCurrentView('tournaments');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleNavigateToTournamentDetail = (id: string) => {
+    setSelectedTournamentId(id);
+    setCurrentView('tournament_detail');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleNavigateHome = () => {
     setCurrentView('home');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -963,6 +1041,8 @@ const App: React.FC = () => {
     await refreshData(authUser);
   };
 
+  const selectedTournament = tournaments.find(item => item.id === selectedTournamentId);
+
   return (
     <div className={'min-h-screen flex flex-col relative transition-colors duration-500'}>
       <div className="fixed top-0 left-0 w-full h-full pointer-events-none z-0">
@@ -975,6 +1055,8 @@ const App: React.FC = () => {
         onHomeClick={handleNavigateHome}
         onProfileClick={handleNavigateToProfile}
         onAdminClick={handleNavigateToAdmin}
+        onTournamentsClick={handleNavigateToTournaments}
+        onTrainingsClick={handleNavigateToTrainers}
         onLoginClick={() => setIsAuthModalOpen(true)}
         onThemeToggle={toggleTheme}
         theme={theme}
@@ -985,7 +1067,10 @@ const App: React.FC = () => {
         {currentView === 'home' ? (
           <>
             <Hero onPlayClick={handlePlayClick} isLoggedIn={!!user} />
-            <Features onTrainingClick={handleNavigateToTrainers} />
+            <Features
+              onTrainingClick={handleNavigateToTrainers}
+              onTournamentsClick={handleNavigateToTournaments}
+            />
             <HeroCarousel />
           </>
         ) : currentView === 'trainers' ? (
@@ -999,6 +1084,17 @@ const App: React.FC = () => {
             activeSessions={activeSessions}
             bookings={bookings}
             games={games}
+          />
+        ) : currentView === 'tournaments' ? (
+          <TournamentsPage
+            tournaments={tournaments}
+            onBack={handleNavigateHome}
+            onSelectTournament={handleNavigateToTournamentDetail}
+          />
+        ) : currentView === 'tournament_detail' ? (
+          <TournamentDetailPage
+            tournament={selectedTournament}
+            onBack={handleNavigateToTournaments}
           />
         ) : currentView === 'profile' ? (
           <ProfilePage

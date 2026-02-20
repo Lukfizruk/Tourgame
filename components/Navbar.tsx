@@ -6,6 +6,8 @@ interface NavbarProps {
   onHomeClick: () => void;
   onProfileClick: () => void;
   onAdminClick: () => void;
+  onTournamentsClick: () => void;
+  onTrainingsClick: () => void;
   onLoginClick: () => void;
   onThemeToggle: () => void;
   theme: 'dark' | 'light';
@@ -16,6 +18,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onHomeClick, 
   onProfileClick, 
   onAdminClick, 
+  onTournamentsClick,
+  onTrainingsClick,
   onLoginClick, 
   onThemeToggle,
   theme,
@@ -34,8 +38,8 @@ export const Navbar: React.FC<NavbarProps> = ({
       
       <div className="hidden lg:flex items-center space-x-12 text-[13px] font-medium tracking-[0.15em] uppercase text-slate-100 dark:text-slate-100 light:text-slate-800">
         <button onClick={onHomeClick} className="hover:text-emerald-500 transition-colors duration-300">Главная</button>
-        <button className="hover:text-emerald-500 transition-colors duration-300">Турниры</button>
-        <button className="hover:text-emerald-500 transition-colors duration-300">Тренинги</button>
+        <button onClick={onTournamentsClick} className="hover:text-emerald-500 transition-colors duration-300">Турниры</button>
+        <button onClick={onTrainingsClick} className="hover:text-emerald-500 transition-colors duration-300">Тренинги</button>
         <button onClick={onAdminClick} className="hover:text-emerald-500 transition-colors duration-300">Админ</button>
       </div>
 

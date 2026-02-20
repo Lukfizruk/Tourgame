@@ -42,22 +42,24 @@ const FeatureCard: React.FC<FeatureCardProps> = ({ title, description, icon, col
 
 interface FeaturesProps {
   onTrainingClick: () => void;
+  onTournamentsClick: () => void;
 }
 
-export const Features: React.FC<FeaturesProps> = ({ onTrainingClick }) => {
+export const Features: React.FC<FeaturesProps> = ({ onTrainingClick, onTournamentsClick }) => {
   const items = [
     {
       title: "Онлайн тренинг",
       description: "Мастер-классы и тренировки в MMOBA игры за разных персонажей. Отточи свои навыки с лучшими наставниками и стань непобедимым героем арены.",
       icon: "🎮",
       color: "bg-emerald-600",
-      isTraining: true
+      onClick: onTrainingClick
     },
     {
       title: "Турниры",
       description: "Платные и бесплатные турниры с реальными призами. Проверь себя в честной борьбе, поднимайся в рейтинге и забирай награды каждую неделю.",
       icon: "🏆",
-      color: "bg-emerald-800"
+      color: "bg-emerald-800",
+      onClick: onTournamentsClick
     },
     {
       title: "Дуэли",
@@ -77,7 +79,7 @@ export const Features: React.FC<FeaturesProps> = ({ onTrainingClick }) => {
             description={item.description}
             icon={item.icon}
             color={item.color}
-            onClick={item.isTraining ? onTrainingClick : undefined}
+            onClick={item.onClick}
           />
         ))}
       </div>
