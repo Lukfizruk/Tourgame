@@ -8,7 +8,7 @@ interface HeroProps {
 
 export const Hero: React.FC<HeroProps> = ({ onPlayClick, isLoggedIn }) => {
   return (
-    <section className="relative pt-40 pb-16 md:pt-56 md:pb-24 px-6 flex flex-col items-center text-center overflow-hidden">
+    <section className="relative pt-24 pb-16 md:pt-32 md:pb-24 px-6 flex flex-col items-center text-center overflow-hidden">
       {/* Animated Glow behind title */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-emerald-900/10 blur-[180px] pointer-events-none rounded-[100%]"></div>
       
